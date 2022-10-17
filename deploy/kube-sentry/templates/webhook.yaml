@@ -4,6 +4,7 @@ metadata:
   name: kube-sentry
   annotations:
     cert-manager.io/inject-ca-from: kube-sentry/kube-sentry-cert
+    "helm.sh/hook": post-install
 webhooks:
   - name: kube-sentry.kube-sentry.svc
     clientConfig:

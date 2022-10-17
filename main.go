@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"os"
+	"time"
 )
 
 // send scan request to remote trivy-server
@@ -73,6 +74,9 @@ func initFlags() *config {
 }
 
 func main() {
+
+	defer time.Sleep(100000 * time.Second)
+
 	logrusLogEntry := logrus.NewEntry(logrus.New())
 	logrusLogEntry.Logger.SetLevel(logrus.DebugLevel)
 	logger := kwhlogrus.NewLogrus(logrusLogEntry)

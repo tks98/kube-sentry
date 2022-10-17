@@ -5,8 +5,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 go build -o kube-sentry main.go
 
-FROM alpine:latest
+FROM cgr.dev/chainguard/static:latest
 COPY --from=build_base /work/kube-sentry /kube-sentry
 
-# run the built binary
-CMD ["/kube-sentry"]
+ENTRYPOINT ["/kube-sentry"]
