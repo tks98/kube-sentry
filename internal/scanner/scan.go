@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aquasecurity/trivy/pkg/types"
+	kwhlog "github.com/slok/kubewebhook/v2/pkg/log"
 	v1 "k8s.io/api/core/v1"
 	"os/exec"
 )
@@ -11,9 +12,10 @@ import (
 type Scanner struct {
 	RemoteURL string
 	Insecure  bool
+	Logger    kwhlog.Logger
 }
 
-func NewScanner(remoteURL string, insecure bool) (*Scanner, error) {
+func NewScanner(remoteURL string, insecure bool, logger kwhlog.Logger) (*Scanner, error) {
 	if remoteURL == "" {
 		return nil, fmt.Errorf("remote url must be set for trivy scanner")
 	}
@@ -21,12 +23,13 @@ func NewScanner(remoteURL string, insecure bool) (*Scanner, error) {
 	return &Scanner{
 		RemoteURL: remoteURL,
 		Insecure:  insecure,
+		Logger:    logger,
 	}, nil
 }
 
 func (s *Scanner) ScanImages(pod *v1.Pod) error {
 
-	fmt.Println(pod)
+	s.Logger.Infof("pod %s", pod)
 
 	var containers []v1.ContainerStatus
 	for _, init := range pod.Status.InitContainerStatuses {
@@ -41,17 +44,17 @@ func (s *Scanner) ScanImages(pod *v1.Pod) error {
 		containers = append(containers, cs)
 	}
 
-	fmt.Printf("Got images in pod: %v", containers)
+	s.Logger.Infof("Got images in pod: %v", containers)
 
 	for _, container := range containers {
 		report, err := s.sendScanRequest(container.Image)
 		if err != nil {
 			return err
 		}
-		fmt.Println(report)
+		s.Logger.Infof("report %v", report)
 	}
 
-	fmt.Println("Images were scanned")
+	s.Logger.Infof("Images were scanned")
 
 	// export report info as prom metrics
 	// save report into to database
@@ -69,15 +72,15 @@ func (s *Scanner) sendScanRequest(image string) (*types.Report, error) {
 		args = append(args, "--insecure")
 	}
 
-	fmt.Printf("Sending scan request for image %s", image)
+	s.Logger.Infof("Sending scan request for image %s", image)
 
 	out, err := exec.Command(command, args...).Output()
 	if err != nil {
-		fmt.Printf("error exec'ing trivy %s", err.Error())
+		s.Logger.Infof("error exec'ing trivy %s", err.Error())
 		return nil, err
 	}
 
-	fmt.Printf("Image %s has been scanned", image)
+	s.Logger.Infof("Image %s has been scanned", image)
 
 	var report types.Report
 	err = json.Unmarshal(out, &report)

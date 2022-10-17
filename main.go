@@ -23,6 +23,28 @@ import (
 // export results as prom metrics
 // write tool that can extract scan results from database in readable format
 
+type config struct {
+	certFile  string
+	keyFile   string
+	addr      string
+	trivyAddr string
+	insecure  bool
+}
+
+func initFlags() *config {
+	cfg := &config{}
+
+	fl := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	fl.StringVar(&cfg.certFile, "tls-cert-file", "", "TLS certificate file")
+	fl.StringVar(&cfg.keyFile, "tls-key-file", "", "TLS key file")
+	fl.StringVar(&cfg.addr, "listen-addr", ":8080", "The address to start the server")
+	fl.StringVar(&cfg.trivyAddr, "trivy-addr", "http://127.0.0.1:4954", "The address of the remote trivy server")
+	fl.BoolVar(&cfg.insecure, "insecure", false, "Allow insecure server connections to trivy server when using TLS")
+
+	_ = fl.Parse(os.Args[1:])
+	return cfg
+}
+
 type imageScanner struct {
 	logger  kwhlog.Logger
 	scanner scanner.Scanner
@@ -50,28 +72,6 @@ func (is *imageScanner) Validate(_ context.Context, _ *kwhmodel.AdmissionReview,
 	}, nil
 }
 
-type config struct {
-	certFile  string
-	keyFile   string
-	addr      string
-	trivyAddr string
-	insecure  bool
-}
-
-func initFlags() *config {
-	cfg := &config{}
-
-	fl := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-	fl.StringVar(&cfg.certFile, "tls-cert-file", "", "TLS certificate file")
-	fl.StringVar(&cfg.keyFile, "tls-key-file", "", "TLS key file")
-	fl.StringVar(&cfg.addr, "listen-addr", ":8080", "The address to start the server")
-	fl.StringVar(&cfg.trivyAddr, "trivy-addr", "http://127.0.0.1:4954", "The address of the remote trivy server")
-	fl.BoolVar(&cfg.insecure, "insecure", false, "Allow insecure server connections to trivy server when using TLS")
-
-	_ = fl.Parse(os.Args[1:])
-	return cfg
-}
-
 func main() {
 
 	logrusLogEntry := logrus.NewEntry(logrus.New())
@@ -80,7 +80,7 @@ func main() {
 
 	cfg := initFlags()
 
-	trivyScanner, err := scanner.NewScanner(cfg.trivyAddr, cfg.insecure)
+	trivyScanner, err := scanner.NewScanner(cfg.trivyAddr, cfg.insecure, logger)
 	vl := &imageScanner{
 		logger:  logger,
 		scanner: *trivyScanner,
