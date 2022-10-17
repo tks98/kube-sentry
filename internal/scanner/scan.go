@@ -26,14 +26,22 @@ func NewScanner(remoteURL string, insecure bool) (*Scanner, error) {
 
 func (s *Scanner) ScanImages(pod *v1.Pod) error {
 
+	fmt.Println(pod)
+
 	var containers []v1.ContainerStatus
 	for _, init := range pod.Status.InitContainerStatuses {
-		for _, eph := range pod.Status.EphemeralContainerStatuses {
-			for _, cs := range pod.Status.ContainerStatuses {
-				containers = append(containers, init, eph, cs)
-			}
-		}
+		containers = append(containers, init)
 	}
+
+	for _, eph := range pod.Status.EphemeralContainerStatuses {
+		containers = append(containers, eph)
+	}
+
+	for _, cs := range pod.Status.ContainerStatuses {
+		containers = append(containers, cs)
+	}
+
+	fmt.Printf("Got images in pod: %v", containers)
 
 	for _, container := range containers {
 		report, err := s.sendScanRequest(container.Image)
@@ -42,6 +50,8 @@ func (s *Scanner) ScanImages(pod *v1.Pod) error {
 		}
 		fmt.Println(report)
 	}
+
+	fmt.Println("Images were scanned")
 
 	// export report info as prom metrics
 	// save report into to database
@@ -59,11 +69,15 @@ func (s *Scanner) sendScanRequest(image string) (*types.Report, error) {
 		args = append(args, "--insecure")
 	}
 
-	cmd := exec.Command(command, args...)
-	out, err := cmd.Output()
+	fmt.Printf("Sending scan request for image %s", image)
+
+	out, err := exec.Command(command, args...).Output()
 	if err != nil {
+		fmt.Printf("error exec'ing trivy %s", err.Error())
 		return nil, err
 	}
+
+	fmt.Printf("Image %s has been scanned", image)
 
 	var report types.Report
 	err = json.Unmarshal(out, &report)

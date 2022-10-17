@@ -38,8 +38,11 @@ func (is *imageScanner) Validate(_ context.Context, _ *kwhmodel.AdmissionReview,
 
 	err := is.scanner.ScanImages(pod)
 	if err != nil {
+		is.logger.Errorf(err.Error())
 		return nil, err
 	}
+
+	is.logger.Infof("%s images have been scanned", pod.Name)
 
 	return &kwhvalidating.ValidatorResult{
 		Valid:   true,
