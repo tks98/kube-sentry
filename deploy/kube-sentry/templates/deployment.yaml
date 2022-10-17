@@ -37,10 +37,6 @@ spec:
             {{- toYaml .Values.image.args | nindent 12 }}
           ports:
             {{- toYaml .Values.image.ports | nindent 12 }}
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
           volumeMounts:
             - name: webhook-certs
               mountPath: /etc/webhook/certs

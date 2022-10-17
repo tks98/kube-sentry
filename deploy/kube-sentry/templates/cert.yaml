@@ -3,6 +3,8 @@ kind: Issuer
 metadata:
   name: self-signer
   namespace: kube-sentry
+  annotations:
+    "helm.sh/hook": pre-install
 spec:
   selfSigned: {}
 ---
@@ -11,6 +13,8 @@ kind: Certificate
 metadata:
   name: kube-sentry-cert
   namespace: kube-sentry
+  annotations:
+    "helm.sh/hook": pre-install
 spec:
   secretName: kube-sentry-cert-secret
   dnsNames:
