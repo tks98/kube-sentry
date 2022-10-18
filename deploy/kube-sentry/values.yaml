@@ -14,11 +14,15 @@ image:
     - --tls-key-file=/etc/webhook/certs/tls.key
     - --insecure=false
     - --listen-addr=:8080
+    - --metrics-addr=:8081
     - --trivy-addr=trivy.default:4954
     - --trivy-scheme=http
   ports:
     - name: http
       containerPort: 8080
+      protocol: TCP
+    - name: metrics
+      containerPort: 8081
       protocol: TCP
 
 imagePullSecrets: []
