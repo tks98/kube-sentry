@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"os"
+	"os/exec"
 )
 
 // send scan request to remote trivy-server
@@ -23,12 +24,19 @@ import (
 // export results as prom metrics
 // write tool that can extract scan results from database in readable format
 
+// send scan request to remote trivy-server
+// get and parse scan results
+// store scan results in database
+// export results as prom metrics
+// write tool that can extract scan results from database in readable format
+
 type config struct {
-	certFile  string
-	keyFile   string
-	addr      string
-	trivyAddr string
-	insecure  bool
+	certFile    string
+	keyFile     string
+	addr        string
+	trivyAddr   string
+	trivyScheme string
+	insecure    bool
 }
 
 func initFlags() *config {
@@ -39,6 +47,7 @@ func initFlags() *config {
 	fl.StringVar(&cfg.keyFile, "tls-key-file", "", "TLS key file")
 	fl.StringVar(&cfg.addr, "listen-addr", ":8080", "The address to start the server")
 	fl.StringVar(&cfg.trivyAddr, "trivy-addr", "http://127.0.0.1:4954", "The address of the remote trivy server")
+	fl.StringVar(&cfg.trivyScheme, "trivy-scheme", "http", "The scheme to reach trivy server (http or https")
 	fl.BoolVar(&cfg.insecure, "insecure", false, "Allow insecure server connections to trivy server when using TLS")
 
 	_ = fl.Parse(os.Args[1:])
@@ -80,7 +89,18 @@ func main() {
 
 	cfg := initFlags()
 
-	trivyScanner, err := scanner.NewScanner(cfg.trivyAddr, cfg.insecure, logger)
+	_, err := exec.LookPath("trivy")
+	if err != nil {
+		logger.Errorf("trivy is not installed, it is a required dependency")
+		os.Exit(1)
+	}
+
+	trivyScanner, err := scanner.NewScanner(cfg.trivyAddr, cfg.insecure, logger, cfg.trivyScheme)
+	if err != nil {
+		logger.Errorf(err.Error())
+		os.Exit(1)
+
+	}
 	vl := &imageScanner{
 		logger:  logger,
 		scanner: *trivyScanner,
@@ -94,7 +114,7 @@ func main() {
 	}
 	wh, err := kwhvalidating.NewWebhook(config)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error creating webhook: %s", err)
+		logger.Errorf("error creating webhook: %s", err)
 		os.Exit(1)
 	}
 
@@ -105,7 +125,7 @@ func main() {
 		Logger:  logger,
 	}))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error serving webhook: %s", err)
+		logger.Errorf("error serving webhook: %s", err)
 		os.Exit(1)
 	}
 }

@@ -1,61 +1,61 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: { { include "kube-sentry.fullname" . } }
+  name: {{ include "kube-sentry.fullname" . }}
   labels:
-    { { - include "kube-sentry.labels" . | nindent 4 } }
+    {{- include "kube-sentry.labels" . | nindent 4 }}
 spec:
-  { { - if not .Values.autoscaling.enabled } }
-  replicas: { { .Values.replicaCount } }
-  { { - end } }
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
-      { { - include "kube-sentry.selectorLabels" . | nindent 6 } }
+      {{- include "kube-sentry.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      { { - with .Values.podAnnotations } }
+      {{- with .Values.podAnnotations }}
       annotations:
-        { { - toYaml . | nindent 8 } }
-      { { - end } }
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       labels:
-        { { - include "kube-sentry.selectorLabels" . | nindent 8 } }
+        {{- include "kube-sentry.selectorLabels" . | nindent 8 }}
     spec:
-      { { - with .Values.imagePullSecrets } }
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-        { { - toYaml . | nindent 8 } }
-      { { - end } }
-      serviceAccountName: { { include "kube-sentry.serviceAccountName" . } }
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "kube-sentry.serviceAccountName" . }}
       securityContext:
-        { { - toYaml .Values.podSecurityContext | nindent 8 } }
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: { { .Chart.Name } }
+        - name: {{ .Chart.Name }}
           securityContext:
-            { { - toYaml .Values.securityContext | nindent 12 } }
+            {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: { { .Values.image.pullPolicy } }
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
-            { { - toYaml .Values.image.args | nindent 12 } }
+            {{- toYaml .Values.image.args | nindent 12 }}
           ports:
-            { { - toYaml .Values.image.ports | nindent 12 } }
+            {{- toYaml .Values.image.ports | nindent 12 }}
           volumeMounts:
             - name: webhook-certs
               mountPath: /etc/webhook/certs
               readOnly: true
           resources:
-            { { - toYaml .Values.resources | nindent 12 } }
+            {{- toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: webhook-certs
           secret:
             secretName: kube-sentry-cert-secret
-      { { - with .Values.nodeSelector } }
+      {{- with .Values.nodeSelector }}
       nodeSelector:
-        { { - toYaml . | nindent 8 } }
-      { { - end } }
-      { { - with .Values.affinity } }
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
       affinity:
-        { { - toYaml . | nindent 8 } }
-      { { - end } }
-      { { - with .Values.tolerations } }
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
       tolerations:
-        { { - toYaml . | nindent 8 } }
-      { { - end } }
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

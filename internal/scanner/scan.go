@@ -15,13 +15,15 @@ type Scanner struct {
 	Logger    kwhlog.Logger
 }
 
-func NewScanner(remoteURL string, insecure bool, logger kwhlog.Logger) (*Scanner, error) {
+func NewScanner(remoteURL string, insecure bool, logger kwhlog.Logger, scheme string) (*Scanner, error) {
 	if remoteURL == "" {
 		return nil, fmt.Errorf("remote url must be set for trivy scanner")
 	}
 
+	address := fmt.Sprintf("%s://%s", scheme, remoteURL)
+
 	return &Scanner{
-		RemoteURL: remoteURL,
+		RemoteURL: address,
 		Insecure:  insecure,
 		Logger:    logger,
 	}, nil
@@ -29,24 +31,7 @@ func NewScanner(remoteURL string, insecure bool, logger kwhlog.Logger) (*Scanner
 
 func (s *Scanner) ScanImages(pod *v1.Pod) error {
 
-	s.Logger.Infof("pod %s", pod)
-
-	var containers []v1.ContainerStatus
-	for _, init := range pod.Status.InitContainerStatuses {
-		containers = append(containers, init)
-	}
-
-	for _, eph := range pod.Status.EphemeralContainerStatuses {
-		containers = append(containers, eph)
-	}
-
-	for _, cs := range pod.Status.ContainerStatuses {
-		containers = append(containers, cs)
-	}
-
-	s.Logger.Infof("Got images in pod: %v", containers)
-
-	for _, container := range containers {
+	for _, container := range pod.Spec.Containers {
 		report, err := s.sendScanRequest(container.Image)
 		if err != nil {
 			return err
@@ -73,6 +58,7 @@ func (s *Scanner) sendScanRequest(image string) (*types.Report, error) {
 	}
 
 	s.Logger.Infof("Sending scan request for image %s", image)
+	s.Logger.Infof("%s:%v", command, args)
 
 	out, err := exec.Command(command, args...).Output()
 	if err != nil {

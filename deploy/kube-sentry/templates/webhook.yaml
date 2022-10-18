@@ -13,10 +13,10 @@ webhooks:
         name: kube-sentry
         path: /validate
     rules:
-      - apiGroups: [ "" ]
-        apiVersions: [ "v1" ]
-        resources: [ "pods" ]
-        operations: [ "CREATE", "UPDATE" ]
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+        operations: ["CREATE", "UPDATE"]
         scope: Namespaced
     sideEffects: None
-    admissionReviewVersions: [ "v1" ]
+    admissionReviewVersions: ["v1"]
