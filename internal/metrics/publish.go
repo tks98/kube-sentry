@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/aquasecurity/trivy/pkg/types"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/tks98/kube-sentry/internal/scanner"
 )
 
 const (
@@ -97,11 +96,11 @@ var metricLabels = []VulnerabilityLabel{
 }
 
 // PublishReportMetrics parses the result, and for each vulnerability, exposes a prometheus metric
-func PublishReportMetrics(scanResult *scanner.Result) {
-	reportValues := getReportValues(scanResult)
+func (e Exporter) PublishReportMetrics() {
+	reportValues := e.getReportValues()
 
-	for _, vuln := range scanResult.TrivyResult.Vulnerabilities {
-		vulnValues := valuesForVulnerability(vuln, metricLabels)
+	for _, vuln := range e.TrivyResult.Vulnerabilities {
+		vulnValues := e.valuesForVulnerability(vuln, metricLabels)
 
 		for label, value := range reportValues {
 			vulnValues[label] = value
@@ -116,18 +115,18 @@ func PublishReportMetrics(scanResult *scanner.Result) {
 	}
 }
 
-func getReportValues(scanResult *scanner.Result) map[string]string {
+func (e Exporter) getReportValues() map[string]string {
 	result := map[string]string{}
 
 	for _, label := range metricLabels {
-		result[label.Name] = reportValueFor(label.Name, scanResult)
+		result[label.Name] = e.reportValueFor(label.Name)
 	}
 
 	return result
 
 }
 
-func valuesForVulnerability(vuln types.DetectedVulnerability, labels []VulnerabilityLabel) map[string]string {
+func (e Exporter) valuesForVulnerability(vuln types.DetectedVulnerability, labels []VulnerabilityLabel) map[string]string {
 	result := map[string]string{}
 	for _, label := range labels {
 		if label.Scope == FieldScopeVulnerability {
@@ -137,20 +136,20 @@ func valuesForVulnerability(vuln types.DetectedVulnerability, labels []Vulnerabi
 	return result
 }
 
-func reportValueFor(field string, scanResult *scanner.Result) string {
+func (e Exporter) reportValueFor(field string) string {
 	switch field {
 	case "report_name":
-		return fmt.Sprintf("%s:%s", scanResult.Namespace, scanResult.Container.Name)
+		return fmt.Sprintf("%s:%s", e.Namespace, e.Container.Name)
 	case "image_namespace":
-		return namespace
+		return e.Namespace
 	case "image_registry":
-		return scanResult.Image.Registry()
+		return e.Image.Registry()
 	case "image_repository":
-		return scanResult.Image.Repository()
+		return e.Image.Repository()
 	case "image_tag":
-		return scanResult.Image.Tag()
+		return e.Image.Tag()
 	case "image_digest":
-		return scanResult.ImageDigest
+		return e.ImageDigest
 	default:
 		return ""
 	}

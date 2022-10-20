@@ -17,14 +17,6 @@ type Scanner struct {
 	Logger    kwhlog.Logger
 }
 
-type Result struct {
-	Container   *v1.Container
-	Namespace   string
-	TrivyResult *types.Result
-	Image       *parser.Reference
-	ImageDigest string
-}
-
 func NewScanner(remoteURL string, insecure bool, logger kwhlog.Logger, scheme string) (*Scanner, error) {
 	if remoteURL == "" {
 		return nil, fmt.Errorf("remote url must be set for trivy scanner")
@@ -54,15 +46,7 @@ func (s *Scanner) ScanImages(pod *v1.Pod) error {
 		}
 
 		for _, result := range report.Results {
-
-			var scanResult = Result{
-				Container:   &container,
-				Namespace:   pod.Namespace,
-				TrivyResult: &result,
-				Image:       image,
-				ImageDigest: report.Metadata.ImageID,
-			}
-			metrics.PublishReportMetrics(&scanResult)
+			metrics.NewExporter(&container, pod.Namespace, &result, image, report.Metadata.ImageID).PublishReportMetrics()
 		}
 
 	}

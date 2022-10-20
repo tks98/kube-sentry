@@ -2,32 +2,26 @@ package metrics
 
 import (
 	"github.com/aquasecurity/trivy/pkg/types"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"net/http"
+	parser "github.com/novln/docker-parser"
+	v1 "k8s.io/api/core/v1"
 )
 
-const (
-	namespace        = "namespace"
-	name             = "name"
-	image_registry   = "image_registry"
-	image_repository = "image_repository"
-	image_tag        = "image_tag"
-	image_digest     = "image_digest"
-	vulnerabilities  = "vulnerabilities"
-)
-
-type VulnerabilityScanReport struct{}
-type FileSystemScanReport struct{}
-type LicenseScanReport struct{}
-
-type ResultsMetricsExporter struct {
+type Exporter struct {
+	Container   *v1.Container
+	Namespace   string
+	TrivyResult *types.Result
+	Image       *parser.Reference
+	ImageDigest string
 }
 
-func ServePrometheusMetrics(port string) {
-	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(port, nil)
-}
+func NewExporter(container *v1.Container, namespace string, trivyResult *types.Result, image *parser.Reference, imageDigest string) Exporter {
 
-func ExportReport(report *types.Report, namespace string) {
+	return Exporter{
+		Container:   container,
+		Namespace:   namespace,
+		TrivyResult: trivyResult,
+		Image:       image,
+		ImageDigest: imageDigest,
+	}
 
 }
