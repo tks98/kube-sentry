@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aquasecurity/trivy/pkg/types"
+	parser "github.com/novln/docker-parser"
 	kwhlog "github.com/slok/kubewebhook/v2/pkg/log"
+	"github.com/tks98/kube-sentry/internal/metrics"
 	v1 "k8s.io/api/core/v1"
 	"os/exec"
 )
@@ -13,6 +15,14 @@ type Scanner struct {
 	RemoteURL string
 	Insecure  bool
 	Logger    kwhlog.Logger
+}
+
+type Result struct {
+	Container   *v1.Container
+	Namespace   string
+	TrivyResult *types.Result
+	Image       *parser.Reference
+	ImageDigest string
 }
 
 func NewScanner(remoteURL string, insecure bool, logger kwhlog.Logger, scheme string) (*Scanner, error) {
@@ -36,13 +46,28 @@ func (s *Scanner) ScanImages(pod *v1.Pod) error {
 		if err != nil {
 			return err
 		}
-		s.Logger.Infof("report %v", report)
+		s.Logger.Infof("trivy report obtained, exporting results")
+
+		image, err := parser.Parse(container.Image)
+		if err != nil {
+			return err
+		}
+
+		for _, result := range report.Results {
+
+			var scanResult = Result{
+				Container:   &container,
+				Namespace:   pod.Namespace,
+				TrivyResult: &result,
+				Image:       image,
+				ImageDigest: report.Metadata.ImageID,
+			}
+			metrics.PublishReportMetrics(&scanResult)
+		}
+
 	}
 
-	s.Logger.Infof("Images were scanned")
-
-	// export report info as prom metrics
-	// save report into to database
+	s.Logger.Infof("images were scanned")
 
 	return nil
 
