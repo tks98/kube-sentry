@@ -117,14 +117,11 @@ var metricLabels = []VulnerabilityLabel{
 
 // PublishReportMetrics parses the result, and for each vulnerability, exposes a prometheus metric
 func (e Exporter) PublishReportMetrics() {
-	reportValues := e.getReportValues()
 
+	fmt.Println("Publishing Metrics for Report")
+	fmt.Printf("Number of CVE's: %d", len(e.TrivyResult.Vulnerabilities))
 	for _, vuln := range e.TrivyResult.Vulnerabilities {
 		vulnValues := e.valuesForVulnerability(vuln, metricLabels)
-
-		for label, value := range reportValues {
-			vulnValues[label] = value
-		}
 
 		score := vuln.Vulnerability.CVSS["nvd"].V3Score
 
@@ -135,28 +132,17 @@ func (e Exporter) PublishReportMetrics() {
 	}
 }
 
-func (e Exporter) getReportValues() map[string]string {
-	result := map[string]string{}
-
-	for _, label := range metricLabels {
-		result[label.Name] = e.reportValueFor(label.Name)
-	}
-
-	return result
-
-}
-
 func (e Exporter) valuesForVulnerability(vuln types.DetectedVulnerability, labels []VulnerabilityLabel) map[string]string {
 	result := map[string]string{}
 	for _, label := range labels {
-		if label.Scope == FieldScopeVulnerability {
-			result[label.Name] = vulnValueFor(label.Name, vuln)
-		}
+		result[label.Name] = e.vulnValueFor(label.Name, vuln)
 	}
+
 	return result
 }
 
-func (e Exporter) reportValueFor(field string) string {
+func (e Exporter) vulnValueFor(field string, vuln types.DetectedVulnerability) string {
+
 	switch field {
 	case "report_name":
 		return fmt.Sprintf("%s:%s", e.Namespace, e.Container.Name)
@@ -170,13 +156,6 @@ func (e Exporter) reportValueFor(field string) string {
 		return e.Image.Tag()
 	case "image_digest":
 		return e.ImageDigest
-	default:
-		return ""
-	}
-}
-
-func vulnValueFor(field string, vuln types.DetectedVulnerability) string {
-	switch field {
 	case "vulnerability_id":
 		return vuln.VulnerabilityID
 	case "vulnerable_resource_name":
@@ -191,6 +170,7 @@ func vulnValueFor(field string, vuln types.DetectedVulnerability) string {
 		return vuln.PrimaryURL
 	case "severity":
 		return vuln.Severity
+
 	default:
 		return ""
 	}
