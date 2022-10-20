@@ -20,6 +20,26 @@ const (
 
 var VulnerabilityInfo *prometheus.GaugeVec
 
+func RegisterVulnerabilityCollector(registry *prometheus.Registry) {
+	VulnerabilityInfo = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "image_vulnerability",
+			Help: "Indicates the presence of a CVE in an image.",
+		},
+		LabelNamesForList(metricLabels),
+	)
+
+	registry.MustRegister(VulnerabilityInfo)
+}
+
+func LabelNamesForList(list []VulnerabilityLabel) []string {
+	var l []string
+	for _, label := range list {
+		l = append(l, label.Name)
+	}
+	return l
+}
+
 type VulnerabilityLabel struct {
 	Name   string
 	Groups []string

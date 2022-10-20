@@ -11,6 +11,7 @@ import (
 	kwhprometheus "github.com/slok/kubewebhook/v2/pkg/metrics/prometheus"
 	kwhwebhook "github.com/slok/kubewebhook/v2/pkg/webhook"
 	kwhvalidating "github.com/slok/kubewebhook/v2/pkg/webhook/validating"
+	"github.com/tks98/kube-sentry/internal/metrics"
 	"github.com/tks98/kube-sentry/internal/scanner"
 	v1 "k8s.io/api/core/v1"
 	"net/http"
@@ -106,6 +107,9 @@ func main() {
 		logger.Errorf("could not create Prometheus metrics recorder: %w", err)
 		os.Exit(1)
 	}
+
+	// register the vulnerabilityInfo collector for exporting scan results
+	metrics.RegisterVulnerabilityCollector(reg)
 
 	errCh := make(chan error)
 

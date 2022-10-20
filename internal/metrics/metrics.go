@@ -23,5 +23,4 @@ func NewExporter(container *v1.Container, namespace string, trivyResult *types.R
 		Image:       image,
 		ImageDigest: imageDigest,
 	}
-
 }
