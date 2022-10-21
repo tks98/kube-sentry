@@ -3,13 +3,16 @@ apiVersion: admissionregistration.k8s.io/v1
 metadata:
   name: kube-sentry
   annotations:
-    cert-manager.io/inject-ca-from: kube-sentry/kube-sentry-cert
-    "helm.sh/hook": post-install
+    helm.sh/hook: post-install
+{{- toYaml .Values.webhook.caBundle.certmanager.annotations | nindent 4 }}
 webhooks:
   - name: kube-sentry.kube-sentry.svc
     clientConfig:
+      {{- if not .Values.webhook.caBundle.certmanager.enabled }}
+      caBundle: {{ .Values.webhook.caBundle.value }}
+      {{- end }}
       service:
-        namespace: kube-sentry
+        namespace: {{.Release.Namespace}}
         name: kube-sentry
         path: /validate
     rules:
