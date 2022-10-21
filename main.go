@@ -97,15 +97,20 @@ func main() {
 	// determine which criteria result in kube-sentry blocking pod creation
 	var rejectionCriteria scanner.RejectionCriteria
 	if cfg.sentryMode {
+		logger.Infof("Sentry mode is enabled")
 		rejectionCriteria.Disabled = false
-		rejectionCriteria.ForbiddenCVEs.CVEs = strings.Split(cfg.forbiddenCVEs, ",")
+		if cfg.forbiddenCVEs != "" {
+			rejectionCriteria.ForbiddenCVEs = &scanner.ForbiddenCVEs{CVEs: strings.Split(cfg.forbiddenCVEs, ",")}
+			logger.Infof("Forbidden CVEs %s", rejectionCriteria.ForbiddenCVEs.CVEs)
+		}
 		if cfg.numCriticalCVEs != "" {
 			numCritical, err := strconv.Atoi(cfg.numCriticalCVEs)
 			if err != nil {
 				logger.Errorf(err.Error())
 				os.Exit(1)
 			}
-			rejectionCriteria.NumCriticalCVEs.CriticalCVEs = numCritical
+			rejectionCriteria.NumCriticalCVEs = &scanner.NumCriticalCVEs{CriticalCVEs: numCritical}
+			logger.Infof("Max Critical CVEs %d", rejectionCriteria.NumCriticalCVEs.CriticalCVEs)
 		}
 
 		if cfg.numAllowedCVEs != "" {
@@ -114,7 +119,8 @@ func main() {
 				logger.Errorf(err.Error())
 				os.Exit(1)
 			}
-			rejectionCriteria.NumAllowedCVEs.AllowedCVEs = numAllowed
+			rejectionCriteria.NumAllowedCVEs = &scanner.NumAllowedCVEs{AllowedCVEs: numAllowed}
+			logger.Infof("Max Total CVEs %d", rejectionCriteria.NumAllowedCVEs.AllowedCVEs)
 		}
 	}
 

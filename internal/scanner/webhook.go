@@ -79,8 +79,12 @@ func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidati
 		return allowed
 	}
 
+	is.Logger.Infof("Checking if report passes validation")
+
 	// check if total number of CVEs is over allowed value, if enabled
 	if is.RejectionCriteria.NumAllowedCVEs != nil {
+
+		is.Logger.Infof("Checking number of CVEs")
 
 		var total int
 		for _, report := range results {
@@ -90,12 +94,15 @@ func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidati
 		}
 
 		if total > is.RejectionCriteria.NumAllowedCVEs.AllowedCVEs {
+			is.Logger.Infof("Too many CVEs")
 			rulesViolated = append(rulesViolated, "pod container images contain too many total vulnerabilities ")
 		}
 	}
 
 	// check if total number of critical CVEs is over allowed value, if enabled
 	if is.RejectionCriteria.NumCriticalCVEs != nil {
+
+		is.Logger.Infof("Checking number of critical CVEs")
 
 		var totalCriticalCVEs int
 		for _, report := range results {
@@ -111,16 +118,20 @@ func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidati
 		}
 
 		if totalCriticalCVEs > is.RejectionCriteria.NumCriticalCVEs.CriticalCVEs {
+			is.Logger.Infof("Too many critical CVEs")
 			rulesViolated = append(rulesViolated, "pod container images contain too many critical vulnerabilities")
 		}
 	}
 
 	// check if any of the CVEs are part of the forbidden CVEs
 	if is.RejectionCriteria.ForbiddenCVEs != nil {
+
+		is.Logger.Infof("Checking for forbidden CVEs")
 		for _, report := range results {
 			for _, result := range report.Results {
 				for _, vuln := range result.Vulnerabilities {
 					if slices.Contains(is.RejectionCriteria.ForbiddenCVEs.CVEs, vuln.VulnerabilityID) {
+						is.Logger.Infof("Forbidden CVE found %s", vuln.VulnerabilityID)
 						msg := fmt.Sprintf("pod container image %s contains forbidden CVE %s", result.Target, vuln.VulnerabilityID)
 						rulesViolated = append(rulesViolated, msg)
 					}
@@ -131,13 +142,14 @@ func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidati
 	}
 
 	// if any rules were violated, reject pod and include which ones were violated
-	if rulesViolated != nil {
+	if len(rulesViolated) != 0 {
 		return &kwhvalidating.ValidatorResult{
-			Valid:   true,
+			Valid:   false,
 			Message: strings.Join(rulesViolated[:], ","),
 		}
 	}
 
+	is.Logger.Infof("Validation passed")
 	return allowed
 
 }
