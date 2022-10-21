@@ -18,6 +18,10 @@ image:
     - --trivy-addr=trivy.default:4954
     - --trivy-scheme=http
     - --metrics-labels="report_name, image_namespace, image_registry, image_repository, image_tag,image_digest, severity, vulnerability_id, vulnerable_resource_name, installed_resource_version, fixed_resource_version, vulnerability_title, vulnerability_link"
+    - --sentry-mode=true
+    - --forbidden-cves="CVE-2020-36309, CVE-2013-0337"
+    - --num-critical-cves=10
+    - --num-allowed-cves=10
   ports:
     - name: http
       containerPort: 8080

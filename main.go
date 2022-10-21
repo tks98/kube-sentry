@@ -17,18 +17,24 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 )
 
 // config stores the application's configuration state
 type config struct {
-	certFile      string
-	keyFile       string
-	addr          string
-	metricsAddr   string
-	trivyAddr     string
-	trivyScheme   string
-	insecure      bool
-	metricsLabels string
+	certFile        string
+	keyFile         string
+	addr            string
+	metricsAddr     string
+	trivyAddr       string
+	trivyScheme     string
+	insecure        bool
+	metricsLabels   string
+	forbiddenCVEs   string
+	numAllowedCVEs  string
+	numCriticalCVEs string
+	sentryMode      bool
 }
 
 // initFlags() parses the application arguments and creates a config type
@@ -44,8 +50,22 @@ func initFlags() *config {
 	fl.StringVar(&cfg.trivyScheme, "trivy-scheme", "http", "The scheme to reach trivy server (http or https")
 	fl.BoolVar(&cfg.insecure, "insecure", false, "Allow insecure server connections to trivy server when using TLS")
 	fl.StringVar(&cfg.metricsLabels, "metrics-labels", "", "Specifies the metrics labels to export. If not given, will export all")
+	fl.BoolVar(&cfg.sentryMode, "sentry-mode", false, "Enables or disables rejecting pods based on trivy scan results")
+	fl.StringVar(&cfg.forbiddenCVEs, "forbidden-cves", "", "Specifies which CVEs in images causes pod validation to fail")
+	fl.StringVar(&cfg.numCriticalCVEs, "num-critical-cves", "", "Specifies max number of critical CVEs pod images can have")
+	fl.StringVar(&cfg.numAllowedCVEs, "num-allowed-cves", "", "Specifies max number of CVEs pod images can have")
 
 	_ = fl.Parse(os.Args[1:])
+
+	// clean up args
+	cfg.forbiddenCVEs = strings.Trim(cfg.forbiddenCVEs, "\"")
+	cfg.forbiddenCVEs = strings.Trim(cfg.forbiddenCVEs, "\n")
+	cfg.forbiddenCVEs = strings.Trim(cfg.forbiddenCVEs, "")
+	cfg.forbiddenCVEs = strings.Trim(cfg.forbiddenCVEs, " ")
+	cfg.metricsLabels = strings.Trim(cfg.metricsLabels, "\"")
+	cfg.metricsLabels = strings.Trim(cfg.metricsLabels, "\n")
+	cfg.metricsLabels = strings.Trim(cfg.metricsLabels, "")
+	cfg.metricsLabels = strings.Trim(cfg.metricsLabels, " ")
 	return cfg
 }
 
@@ -56,6 +76,7 @@ func main() {
 	logrusLogEntry.Logger.SetLevel(logrus.DebugLevel)
 	logger := kwhlogrus.NewLogrus(logrusLogEntry)
 
+	// parse config and clean args
 	cfg := initFlags()
 
 	// check that trivy is installed
@@ -73,10 +94,35 @@ func main() {
 
 	}
 
+	// determine which criteria result in kube-sentry blocking pod creation
+	var rejectionCriteria scanner.RejectionCriteria
+	if cfg.sentryMode {
+		rejectionCriteria.Disabled = false
+		rejectionCriteria.ForbiddenCVEs.CVEs = strings.Split(cfg.forbiddenCVEs, ",")
+		if cfg.numCriticalCVEs != "" {
+			numCritical, err := strconv.Atoi(cfg.numCriticalCVEs)
+			if err != nil {
+				logger.Errorf(err.Error())
+				os.Exit(1)
+			}
+			rejectionCriteria.NumCriticalCVEs.CriticalCVEs = numCritical
+		}
+
+		if cfg.numAllowedCVEs != "" {
+			numAllowed, err := strconv.Atoi(cfg.numAllowedCVEs)
+			if err != nil {
+				logger.Errorf(err.Error())
+				os.Exit(1)
+			}
+			rejectionCriteria.NumAllowedCVEs.AllowedCVEs = numAllowed
+		}
+	}
+
 	// create the scanner webhook validator
 	scannerWebhook := &scanner.ImageScanner{
-		Logger:  logger,
-		Scanner: *trivyScanner,
+		Logger:            logger,
+		Scanner:           *trivyScanner,
+		RejectionCriteria: rejectionCriteria,
 	}
 
 	// create webhook
