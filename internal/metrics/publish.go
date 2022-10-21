@@ -3,147 +3,39 @@ package metrics
 import (
 	"fmt"
 	"github.com/aquasecurity/trivy/pkg/types"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
-const (
-	LabelGroupAll     = "all"
-	labelGroupSummary = "summary"
-)
-
-type FieldScope string
-
-const (
-	FieldScopeReport        FieldScope = "report"
-	FieldScopeVulnerability FieldScope = "vulnerability"
-)
-
-var VulnerabilityInfo *prometheus.GaugeVec
-
-func RegisterVulnerabilityCollector(registry *prometheus.Registry) {
-	VulnerabilityInfo = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "image_vulnerability",
-			Help: "Indicates the presence of a CVE in an image.",
-		},
-		LabelNamesForList(metricLabels),
-	)
-
-	registry.MustRegister(VulnerabilityInfo)
-}
-
-func LabelNamesForList(list []VulnerabilityLabel) []string {
-	var l []string
-	for _, label := range list {
-		l = append(l, label.Name)
-	}
-	return l
-}
-
-type VulnerabilityLabel struct {
-	Name   string
-	Groups []string
-	Scope  FieldScope
-}
-
-var metricLabels = []VulnerabilityLabel{
-	{
-		Name:   "report_name",
-		Groups: []string{LabelGroupAll, labelGroupSummary},
-		Scope:  FieldScopeReport,
-	},
-	{
-		Name:   "image_namespace",
-		Groups: []string{LabelGroupAll, labelGroupSummary},
-		Scope:  FieldScopeReport,
-	},
-	{
-		Name:   "image_registry",
-		Groups: []string{LabelGroupAll, labelGroupSummary},
-		Scope:  FieldScopeReport,
-	},
-	{
-		Name:   "image_repository",
-		Groups: []string{LabelGroupAll, labelGroupSummary},
-		Scope:  FieldScopeReport,
-	},
-	{
-		Name:   "image_tag",
-		Groups: []string{LabelGroupAll, labelGroupSummary},
-		Scope:  FieldScopeReport,
-	},
-	{
-		Name:   "image_digest",
-		Groups: []string{LabelGroupAll, labelGroupSummary},
-		Scope:  FieldScopeReport,
-	},
-	{
-		Name: "severity",
-		// Note - Summary metrics use a different severity field than per-vulnerability severity.
-		Groups: []string{LabelGroupAll, labelGroupSummary},
-		Scope:  FieldScopeVulnerability,
-	},
-	{
-		Name:   "vulnerability_id",
-		Groups: []string{LabelGroupAll},
-		Scope:  FieldScopeVulnerability,
-	},
-	{
-		Name:   "vulnerable_resource_name",
-		Groups: []string{LabelGroupAll},
-		Scope:  FieldScopeVulnerability,
-	},
-	{
-		Name:   "installed_resource_version",
-		Groups: []string{LabelGroupAll},
-		Scope:  FieldScopeVulnerability,
-	},
-	{
-		Name:   "fixed_resource_version",
-		Groups: []string{LabelGroupAll},
-		Scope:  FieldScopeVulnerability,
-	},
-	{
-		Name:   "vulnerability_title",
-		Groups: []string{LabelGroupAll},
-		Scope:  FieldScopeVulnerability,
-	},
-	{
-		Name:   "vulnerability_link",
-		Groups: []string{LabelGroupAll},
-		Scope:  FieldScopeVulnerability,
-	},
-}
-
-// PublishReportMetrics parses the result, and for each vulnerability, exposes a prometheus metric
+// PublishReportMetrics publishes the trivy scan results for each vulnerability
 func (e Exporter) PublishReportMetrics() {
 
-	fmt.Println("Publishing Metrics for Report")
-	fmt.Printf("Number of CVE's: %d", len(e.TrivyResult.Vulnerabilities))
 	for _, vuln := range e.TrivyResult.Vulnerabilities {
-		vulnValues := e.valuesForVulnerability(vuln, metricLabels)
 
+		// retrieve vulnerability information from result
+		// convert into metrics prometheus can export
+		vulnerabilityMetrics := e.parseVulnerability(vuln)
 		score := vuln.Vulnerability.CVSS["nvd"].V3Score
 
-		// Expose the metric
-		VulnerabilityInfo.With(
-			vulnValues,
+		// publish the metric
+		ImageVulnerability.With(
+			vulnerabilityMetrics,
 		).Set(score)
 	}
 }
 
-func (e Exporter) valuesForVulnerability(vuln types.DetectedVulnerability, labels []VulnerabilityLabel) map[string]string {
+// parseVulnerability uses the detected vulnerability from the trivy scan and converts it into a format prometheus can export
+func (e Exporter) parseVulnerability(vuln types.DetectedVulnerability) map[string]string {
 	result := map[string]string{}
-	for _, label := range labels {
-		result[label.Name] = e.vulnValueFor(label.Name, vuln)
+	for _, label := range VulnerabilityLabels {
+		result[label.Name] = e.getVulnerabilityValue(label.Name, vuln)
 	}
 
 	return result
 }
 
-func (e Exporter) vulnValueFor(field string, vuln types.DetectedVulnerability) string {
+// getVulnerabilityValue returns the value from the trivy vulnerability which corresponds to the metrics label
+func (e Exporter) getVulnerabilityValue(label string, vuln types.DetectedVulnerability) string {
 
-	switch field {
+	switch label {
 	case "report_name":
 		return fmt.Sprintf("%s:%s", e.Namespace, e.Container.Name)
 	case "image_namespace":

@@ -19,28 +19,19 @@ import (
 	"os/exec"
 )
 
-// send scan request to remote trivy-server
-// get and parse scan results
-// store scan results in database
-// export results as prom metrics
-// write tool that can extract scan results from database in readable format
-
-// send scan request to remote trivy-server
-// get and parse scan results
-// store scan results in database
-// export results as prom metrics
-// write tool that can extract scan results from database in readable format
-
+// config stores the application's configuration state
 type config struct {
-	certFile    string
-	keyFile     string
-	addr        string
-	metricsAddr string
-	trivyAddr   string
-	trivyScheme string
-	insecure    bool
+	certFile      string
+	keyFile       string
+	addr          string
+	metricsAddr   string
+	trivyAddr     string
+	trivyScheme   string
+	insecure      bool
+	metricsLabels string
 }
 
+// initFlags() parses the application arguments and creates a config type
 func initFlags() *config {
 	cfg := &config{}
 
@@ -52,6 +43,7 @@ func initFlags() *config {
 	fl.StringVar(&cfg.trivyAddr, "trivy-addr", "http://127.0.0.1:4954", "The address of the remote trivy server")
 	fl.StringVar(&cfg.trivyScheme, "trivy-scheme", "http", "The scheme to reach trivy server (http or https")
 	fl.BoolVar(&cfg.insecure, "insecure", false, "Allow insecure server connections to trivy server when using TLS")
+	fl.StringVar(&cfg.metricsLabels, "metrics-labels", "", "Specifies the metrics labels to export. If not given, will export all")
 
 	_ = fl.Parse(os.Args[1:])
 	return cfg
@@ -73,7 +65,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// create a new scanner
+	// create a new trivy scanner
 	trivyScanner, err := scanner.NewScanner(cfg.trivyAddr, cfg.insecure, logger, cfg.trivyScheme)
 	if err != nil {
 		logger.Errorf(err.Error())
@@ -81,6 +73,7 @@ func main() {
 
 	}
 
+	// create the scanner webhook validator
 	scannerWebhook := &scanner.ImageScanner{
 		Logger:  logger,
 		Scanner: *trivyScanner,
@@ -94,13 +87,14 @@ func main() {
 		Logger:    logger,
 	}
 
+	// register the webhook
 	wh, err := kwhvalidating.NewWebhook(config)
 	if err != nil {
 		logger.Errorf("error creating webhook: %s", err)
 		os.Exit(1)
 	}
 
-	// prepare metrics
+	// prepare prometheus metrics
 	reg := prometheus.NewRegistry()
 	metricsRec, err := kwhprometheus.NewRecorder(kwhprometheus.RecorderConfig{Registry: reg})
 	if err != nil {
@@ -109,7 +103,7 @@ func main() {
 	}
 
 	// register the vulnerabilityInfo collector for exporting scan results
-	metrics.RegisterVulnerabilityCollector(reg)
+	metrics.RegisterVulnerabilityCollector(reg, cfg.metricsLabels)
 
 	errCh := make(chan error)
 
@@ -136,6 +130,7 @@ func main() {
 		errCh <- nil
 	}()
 
+	// listen for errors
 	err = <-errCh
 	if err != nil {
 		logger.Errorf(err.Error())

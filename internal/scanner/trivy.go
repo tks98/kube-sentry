@@ -11,12 +11,14 @@ import (
 	"os/exec"
 )
 
+// Scanner represents a trivy scanner
 type Scanner struct {
 	RemoteURL string
 	Insecure  bool
 	Logger    kwhlog.Logger
 }
 
+// NewScanner returns a Scanner
 func NewScanner(remoteURL string, insecure bool, logger kwhlog.Logger, scheme string) (*Scanner, error) {
 	if remoteURL == "" {
 		return nil, fmt.Errorf("remote url must be set for trivy scanner")
@@ -31,6 +33,7 @@ func NewScanner(remoteURL string, insecure bool, logger kwhlog.Logger, scheme st
 	}, nil
 }
 
+// ScanImages sends a scan request to the trivy server for each container image inside the pod and exports the result to prometheus
 func (s *Scanner) ScanImages(pod *v1.Pod) error {
 
 	for _, container := range pod.Spec.Containers {
@@ -57,6 +60,7 @@ func (s *Scanner) ScanImages(pod *v1.Pod) error {
 
 }
 
+// sendScanRequest sends the image to trivy for scanning and returns the result
 func (s *Scanner) sendScanRequest(image string) (*types.Report, error) {
 
 	command := "trivy"

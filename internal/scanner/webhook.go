@@ -15,7 +15,11 @@ type ImageScanner struct {
 	Scanner Scanner
 }
 
+// Validate is the function called by the admission controller when, in our case, pods are created or updated
+// The images for each container are sent to the trivy scanner and the results are exposed as prometheus metrics
 func (is *ImageScanner) Validate(_ context.Context, _ *kwhmodel.AdmissionReview, obj metav1.Object) (*kwhvalidating.ValidatorResult, error) {
+
+	// verify the pod is valid
 	pod, ok := obj.(*v1.Pod)
 	if !ok {
 		return nil, fmt.Errorf("not a pod")
@@ -23,6 +27,7 @@ func (is *ImageScanner) Validate(_ context.Context, _ *kwhmodel.AdmissionReview,
 
 	is.Logger.Infof("pod %s is valid", pod.Name)
 
+	// scan container images and export results
 	err := is.Scanner.ScanImages(pod)
 	if err != nil {
 		is.Logger.Errorf(err.Error())
