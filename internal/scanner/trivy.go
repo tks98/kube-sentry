@@ -34,29 +34,32 @@ func NewScanner(remoteURL string, insecure bool, logger kwhlog.Logger, scheme st
 }
 
 // ScanImages sends a scan request to the trivy server for each container image inside the pod and exports the result to prometheus
-func (s *Scanner) ScanImages(pod *v1.Pod) error {
+func (s *Scanner) ScanImages(pod *v1.Pod) ([]*types.Report, error) {
 
+	var reports []*types.Report
 	for _, container := range pod.Spec.Containers {
 		report, err := s.sendScanRequest(container.Image)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		s.Logger.Infof("trivy report obtained, exporting results")
 
 		image, err := parser.Parse(container.Image)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		for _, result := range report.Results {
 			metrics.NewExporter(&container, pod.Namespace, &result, image, report.Metadata.ImageID).PublishReportMetrics()
 		}
 
+		reports = append(reports, report)
+
 	}
 
 	s.Logger.Infof("images were scanned")
 
-	return nil
+	return reports, nil
 
 }
 

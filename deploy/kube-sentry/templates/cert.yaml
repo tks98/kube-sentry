@@ -2,7 +2,7 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: self-signer
-  namespace: kube-sentry
+  namespace: {{.Release.Namespace}}
   annotations:
     "helm.sh/hook": pre-install
 spec:
@@ -12,14 +12,12 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: kube-sentry-cert
-  namespace: kube-sentry
+  namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": pre-install
 spec:
-  secretName: kube-sentry-cert-secret
+  secretName: {{.Values.webhook.caBundle.secretName}}
   dnsNames:
-    - kube-sentry
-    - kube-sentry.kube-sentry
-    - kube-sentry.kube-sentry.svc
+{{- toYaml .Values.webhook.caBundle.certmanager.dnsNames | nindent 4 }}
   issuerRef:
     name: self-signer
