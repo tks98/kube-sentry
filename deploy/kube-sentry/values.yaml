@@ -26,18 +26,18 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "test2"
   args:
-    - --tls-cert-file=/etc/webhook/certs/tls.crt
-    - --tls-key-file=/etc/webhook/certs/tls.key
-    - --insecure=false
-    - --listen-addr=:8080
-    - --metrics-addr=:8081
-    - --trivy-addr=trivy.default:4954
-    - --trivy-scheme=http
-    - --metrics-labels="report_name, image_namespace, image_registry, image_repository, image_tag,image_digest, severity, vulnerability_id, vulnerable_resource_name, installed_resource_version, fixed_resource_version, vulnerability_title, vulnerability_link"
-    - --sentry-mode=true
-    - --forbidden-cves="CVE-2020-36309, CVE-2013-0337"
-    - --num-critical-cves=10
-    - --num-allowed-cves=10
+    tlsCertFile: "/etc/webhook/certs/tls.crt"
+    tlsKeyFile: "/etc/webhook/certs/tls.key"
+    insecure: "false"
+    listenAddr: ":8080"
+    metricsAddr: ":8081"
+    trivyAddr: "trivy.default:4954"
+    trivyScheme: "http"
+    metricsLabels: "report_name, image_namespace, image_registry, image_repository, image_tag,image_digest, severity, vulnerability_id, vulnerable_resource_name, installed_resource_version, fixed_resource_version, vulnerability_title, vulnerability_link"
+    sentryMode: "true"
+    forbiddenCves: "CVE-2020-36309, CVE-2013-0337"
+    numCriticalCves: "10"
+    numAllowed-Cves: "10"
   ports:
     - name: http
       containerPort: 8080

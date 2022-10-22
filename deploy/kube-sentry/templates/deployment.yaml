@@ -34,7 +34,18 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
-            {{- toYaml .Values.image.args | nindent 12 }}
+          - --tls-cert-file={{ .Values.image.args.tlsCertFile }}
+          - --tls-key-file={{ .Values.image.args.tlsKeyFile }}
+          - --insecure={{ .Values.image.args.insecure }}
+          - --listen-addr={{ .Values.image.args.listenAddr }}
+          - --metrics-addr={{ .Values.image.args.metricsAddr }}
+          - --trivy-addr={{ .Values.image.args.trivyAddr }}
+          - --trivy-scheme={{ .Values.image.args.trivyScheme }}
+          - --metrics-labels={{ .Values.image.args.metricsLabels }}
+          - --sentry-mode={{ .Values.image.args.sentryMode }}
+          - --forbidden-cves={{ .Values.image.args.forbiddenCves}}
+          - --num-critical-cves={{ .Values.image.args.numCriticalCves }}
+          - --num-allowed-cves={{ .Values.image.args.numAllowedCves }}
           ports:
             {{- toYaml .Values.image.ports | nindent 12 }}
           volumeMounts:
