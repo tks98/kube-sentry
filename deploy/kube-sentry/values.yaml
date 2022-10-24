@@ -7,14 +7,14 @@ webhook:
   caBundle:
     certmanager: # certmanager's ca-injector can be used to inject the caBundle into the ValidationWebhookConfiguration https://cert-manager.io/docs/concepts/ca-injector/
       enabled: true
+      secretName: kube-sentry-cert
       annotations:
-        cert-manager.io/inject-ca-from: kube-sentry/kube-sentry-cert
+        cert-manager.io/inject-ca-from: kube-sentry/kube-sentry-cert # namespace/secretName
       dnsNames:
         - kube-sentry
         - kube-sentry.kube-sentry
         - kube-sentry.kube-sentry.svc
     value: "" # if you are not using certmanager, put the caBundle value here
-    secretName: kube-sentry-cert-secret
 
 image:
   repository:  docker.io/tks98/kube-sentry

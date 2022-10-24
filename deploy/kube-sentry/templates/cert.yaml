@@ -16,7 +16,7 @@ metadata:
   annotations:
     "helm.sh/hook": pre-install
 spec:
-  secretName: {{.Values.webhook.caBundle.secretName}}
+  secretName: {{.Values.webhook.caBundle.certmanager.secretName}}
   dnsNames:
 {{- toYaml .Values.webhook.caBundle.certmanager.dnsNames | nindent 4 }}
   issuerRef:
