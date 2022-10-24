@@ -33,7 +33,7 @@ image:
     sentryMode: "true"
     forbiddenCves: "CVE-2020-36309, CVE-2013-0337"
     numCriticalCves: "10"
-    numAllowed-Cves: "10"
+    numAllowedCves: "10"
   ports:
     - name: http
       containerPort: 8080
