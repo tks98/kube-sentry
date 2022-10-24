@@ -2,7 +2,7 @@
 
 kube-sentry is a validating admission webhook for Kubernetes that scans incoming container images for vulnerabilities, exports scan results to prometheus, and can prevent pods from being created based on user specified rules.
 
-![Alt text](https://raw.githubusercontent.com/tks98/kube-sentry/readme/docs/diagrams/architecture/kube-sentry.png?token=GHSAT0AAAAAABVO55M7K4ICNE3CMIXJQYWKY2V5QJQ "Architecture")
+![Alt text](docs/diagrams/architecture/kube-sentry.png "Architecture")
 
 ## Installation
 
