@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 )
 
@@ -96,32 +95,12 @@ func main() {
 	}
 
 	// determine which criteria result in kube-sentry blocking pod creation
-	var rejectionCriteria webhook.RejectionCriteria
+	var rejectionCriteria *webhook.RejectionCriteria
 	if cfg.sentryMode {
-		logger.Infof("Sentry mode is enabled")
-		rejectionCriteria.Disabled = false
-		if cfg.forbiddenCVEs != "" {
-			rejectionCriteria.ForbiddenCVEs = &webhook.ForbiddenCVEs{CVEs: strings.Split(cfg.forbiddenCVEs, ",")}
-			logger.Infof("Forbidden CVEs %s", rejectionCriteria.ForbiddenCVEs.CVEs)
-		}
-		if cfg.numCriticalCVEs != "" {
-			numCritical, err := strconv.Atoi(cfg.numCriticalCVEs)
-			if err != nil {
-				logger.Errorf(err.Error())
-				os.Exit(1)
-			}
-			rejectionCriteria.NumCriticalCVEs = &webhook.NumCriticalCVEs{CriticalCVEs: numCritical}
-			logger.Infof("Max Critical CVEs %d", rejectionCriteria.NumCriticalCVEs.CriticalCVEs)
-		}
-
-		if cfg.numAllowedCVEs != "" {
-			numAllowed, err := strconv.Atoi(cfg.numAllowedCVEs)
-			if err != nil {
-				logger.Errorf(err.Error())
-				os.Exit(1)
-			}
-			rejectionCriteria.NumAllowedCVEs = &webhook.NumAllowedCVEs{AllowedCVEs: numAllowed}
-			logger.Infof("Max Total CVEs %d", rejectionCriteria.NumAllowedCVEs.AllowedCVEs)
+		rejectionCriteria, err = webhook.InitRejectionCriteria(cfg.forbiddenCVEs, cfg.numCriticalCVEs, cfg.numAllowedCVEs)
+		if err != nil {
+			logger.Errorf(err.Error())
+			os.Exit(1)
 		}
 	}
 
@@ -129,7 +108,7 @@ func main() {
 	scannerWebhook := &webhook.ImageScanner{
 		Logger:            logger,
 		Scanner:           *trivyScanner,
-		RejectionCriteria: rejectionCriteria,
+		RejectionCriteria: *rejectionCriteria,
 	}
 
 	// create webhook
