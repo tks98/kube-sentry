@@ -6,7 +6,7 @@ import (
 	"github.com/aquasecurity/trivy/pkg/types"
 	parser "github.com/novln/docker-parser"
 	kwhlog "github.com/slok/kubewebhook/v2/pkg/log"
-	"github.com/tks98/kube-sentry/internal/metrics"
+	"github.com/tks98/kube-sentry/pkg/metrics"
 	v1 "k8s.io/api/core/v1"
 	"os/exec"
 )

@@ -1,4 +1,4 @@
-package scanner
+package webhook
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	kwhlog "github.com/slok/kubewebhook/v2/pkg/log"
 	kwhmodel "github.com/slok/kubewebhook/v2/pkg/model"
 	kwhvalidating "github.com/slok/kubewebhook/v2/pkg/webhook/validating"
+	"github.com/tks98/kube-sentry/pkg/scanner"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/strings/slices"
@@ -35,7 +36,7 @@ type RejectionCriteria struct {
 
 type ImageScanner struct {
 	Logger            kwhlog.Logger
-	Scanner           Scanner
+	Scanner           scanner.Scanner
 	RejectionCriteria RejectionCriteria
 }
 

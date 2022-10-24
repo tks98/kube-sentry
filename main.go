@@ -11,8 +11,9 @@ import (
 	kwhprometheus "github.com/slok/kubewebhook/v2/pkg/metrics/prometheus"
 	kwhwebhook "github.com/slok/kubewebhook/v2/pkg/webhook"
 	kwhvalidating "github.com/slok/kubewebhook/v2/pkg/webhook/validating"
-	"github.com/tks98/kube-sentry/internal/metrics"
-	"github.com/tks98/kube-sentry/internal/scanner"
+	"github.com/tks98/kube-sentry/pkg/metrics"
+	"github.com/tks98/kube-sentry/pkg/scanner"
+	"github.com/tks98/kube-sentry/pkg/webhook"
 	v1 "k8s.io/api/core/v1"
 	"net/http"
 	"os"
@@ -95,12 +96,12 @@ func main() {
 	}
 
 	// determine which criteria result in kube-sentry blocking pod creation
-	var rejectionCriteria scanner.RejectionCriteria
+	var rejectionCriteria webhook.RejectionCriteria
 	if cfg.sentryMode {
 		logger.Infof("Sentry mode is enabled")
 		rejectionCriteria.Disabled = false
 		if cfg.forbiddenCVEs != "" {
-			rejectionCriteria.ForbiddenCVEs = &scanner.ForbiddenCVEs{CVEs: strings.Split(cfg.forbiddenCVEs, ",")}
+			rejectionCriteria.ForbiddenCVEs = &webhook.ForbiddenCVEs{CVEs: strings.Split(cfg.forbiddenCVEs, ",")}
 			logger.Infof("Forbidden CVEs %s", rejectionCriteria.ForbiddenCVEs.CVEs)
 		}
 		if cfg.numCriticalCVEs != "" {
@@ -109,7 +110,7 @@ func main() {
 				logger.Errorf(err.Error())
 				os.Exit(1)
 			}
-			rejectionCriteria.NumCriticalCVEs = &scanner.NumCriticalCVEs{CriticalCVEs: numCritical}
+			rejectionCriteria.NumCriticalCVEs = &webhook.NumCriticalCVEs{CriticalCVEs: numCritical}
 			logger.Infof("Max Critical CVEs %d", rejectionCriteria.NumCriticalCVEs.CriticalCVEs)
 		}
 
@@ -119,13 +120,13 @@ func main() {
 				logger.Errorf(err.Error())
 				os.Exit(1)
 			}
-			rejectionCriteria.NumAllowedCVEs = &scanner.NumAllowedCVEs{AllowedCVEs: numAllowed}
+			rejectionCriteria.NumAllowedCVEs = &webhook.NumAllowedCVEs{AllowedCVEs: numAllowed}
 			logger.Infof("Max Total CVEs %d", rejectionCriteria.NumAllowedCVEs.AllowedCVEs)
 		}
 	}
 
 	// create the scanner webhook validator
-	scannerWebhook := &scanner.ImageScanner{
+	scannerWebhook := &webhook.ImageScanner{
 		Logger:            logger,
 		Scanner:           *trivyScanner,
 		RejectionCriteria: rejectionCriteria,
