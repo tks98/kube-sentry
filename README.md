@@ -18,20 +18,21 @@ kube-sentry requires a remote trivy server for scanning container images. This c
 
 ## Configuration
 
-| Argument      | Description                     |
-|---------------|---------------------------------|
-| `tlsCertFile` | Location of the TLS certificate |
-| `tlsKeyFile`  | Location of the TLS private key |
-|  `insecure` | If trivy scan request should be insecure | 
-| `listenAddr` | Address for kube-senty to listen for validation requests |
-| `metricsAddr` | Address to serve prometheus metrics | 
-| `trivyAddr` | Address of the trivy server to send scan request | 
-| `trivyScheme` | Scheme to communicate to remote trivy server |
-| `metricsLabels` | Specifies the metrics labels to export. If not given, will export all |
- | `sentryMode` | Enables rejecting pods based on trivy scan results |
-| `forbiddenCves` | Specifies which CVEs in images causes pod validation to fail |
-| `numCriticalCves` | Max number of critical CVEs pod images can have |
-| `numAllowedCves` | Max number of CVEs pod images can have |
+| Argument          | Description                                                           |
+|-------------------|-----------------------------------------------------------------------|
+| `tlsCertFile`     | Location of the TLS certificate                                       |
+| `tlsKeyFile`      | Location of the TLS private key                                       |
+| `logLevel`        | Specifies the logging level (info or debug)                           |
+| `insecure`        | If trivy scan request should be insecure                              | 
+| `listenAddr`      | Address for kube-senty to listen for validation requests              |
+| `metricsAddr`     | Address to serve prometheus metrics                                   | 
+| `trivyAddr`       | Address of the trivy server to send scan request                      | 
+| `trivyScheme`     | Scheme to communicate to remote trivy server                          |
+| `metricsLabels`   | Specifies the metrics labels to export. If not given, will export all |
+ | `sentryMode`      | Enables rejecting pods based on trivy scan results                    |
+| `forbiddenCves`   | Specifies which CVEs in images causes pod validation to fail          |
+| `numCriticalCves` | Max number of critical CVEs pod images can have                       |
+| `numAllowedCves`  | Max number of CVEs pod images can have                                |
 
 
 ## Contributing

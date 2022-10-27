@@ -57,7 +57,7 @@ spec:
       volumes:
         - name: webhook-certs
           secret:
-            secretName: kube-sentry-cert-secret
+            secretName: kube-sentry-cert
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

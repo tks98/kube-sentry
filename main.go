@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 	kwhhttp "github.com/slok/kubewebhook/v2/pkg/http"
-	kwhlogrus "github.com/slok/kubewebhook/v2/pkg/log/logrus"
 	kwhprometheus "github.com/slok/kubewebhook/v2/pkg/metrics/prometheus"
 	kwhwebhook "github.com/slok/kubewebhook/v2/pkg/webhook"
 	kwhvalidating "github.com/slok/kubewebhook/v2/pkg/webhook/validating"
+	logging "github.com/tks98/kube-sentry/pkg/logging"
 	"github.com/tks98/kube-sentry/pkg/metrics"
 	"github.com/tks98/kube-sentry/pkg/scanner"
 	"github.com/tks98/kube-sentry/pkg/webhook"
@@ -25,6 +24,7 @@ import (
 type config struct {
 	certFile        string
 	keyFile         string
+	logLevel        string
 	addr            string
 	metricsAddr     string
 	trivyAddr       string
@@ -44,6 +44,7 @@ func initFlags() *config {
 	fl := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	fl.StringVar(&cfg.certFile, "tls-cert-file", "", "TLS certificate file")
 	fl.StringVar(&cfg.keyFile, "tls-key-file", "", "TLS key file")
+	fl.StringVar(&cfg.logLevel, "log-level", "info", "Specifies the logging level (info or debug")
 	fl.StringVar(&cfg.addr, "listen-addr", ":8080", "The address to start the server")
 	fl.StringVar(&cfg.metricsAddr, "metrics-addr", ":8081", "The address to start metrics server")
 	fl.StringVar(&cfg.trivyAddr, "trivy-addr", "http://127.0.0.1:4954", "The address of the remote trivy server")
@@ -71,16 +72,18 @@ func initFlags() *config {
 
 func main() {
 
-	// init logger and parse flags
-	logrusLogEntry := logrus.NewEntry(logrus.New())
-	logrusLogEntry.Logger.SetLevel(logrus.DebugLevel)
-	logger := kwhlogrus.NewLogrus(logrusLogEntry)
-
 	// parse config and clean args
 	cfg := initFlags()
 
+	// init logging and parse flags
+	logger, err := logging.NewLogger(cfg.logLevel)
+	if err != nil {
+		fmt.Printf(err.Error())
+		os.Exit(1)
+	}
+
 	// check that trivy is installed
-	_, err := exec.LookPath("trivy")
+	_, err = exec.LookPath("trivy")
 	if err != nil {
 		logger.Errorf("trivy is not installed, it is a required dependency")
 		os.Exit(1)

@@ -11,8 +11,6 @@ webhook:
       annotations:
         cert-manager.io/inject-ca-from: kube-sentry/kube-sentry-cert # namespace/secretName
       dnsNames:
-        - kube-sentry
-        - kube-sentry.kube-sentry
         - kube-sentry.kube-sentry.svc
     value: "" # if you are not using certmanager, put the caBundle value here
 
@@ -20,7 +18,7 @@ image:
   repository:  docker.io/tks98/kube-sentry
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "test2"
+  tag: "latest"
   args:
     tlsCertFile: "/etc/webhook/certs/tls.crt"
     tlsKeyFile: "/etc/webhook/certs/tls.key"
