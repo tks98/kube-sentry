@@ -10,7 +10,7 @@ Kube-Sentry utilizes the AdmissionRegistrationAPI, registering it as a Validatio
 ### Certificate Management
 Custom Admission Webhooks are required to communicate with the API server over HTTPS, so TLS certificates need to be generated and registered with the API server. This is done by generating a caBundle and defining it in the [ValidationWebhookConfiguration](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#configure-admission-webhooks-on-the-fly).
 
-Kube-Sentry can utilize Certmanager's CA injector to generate the certificates, place them in a Kubernetes secret so they can be mounted, and register them with the API server by creating a caBundle and patching the ValidationWebhookConfiguration with it.
+Kube-Sentry can utilize Certmanager's CA injector to generate the certificates, place them in a Kubernetes secret, so they can be mounted, and register them with the API server by creating a caBundle and patching the ValidationWebhookConfiguration with it.
 
 Certificates can also be created manually, bundled into the caBundle and supplied to the ValidatingWebhookConfiguration.
 

@@ -85,7 +85,7 @@ func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidati
 	// check if total number of CVEs is over allowed value, if enabled
 	if is.RejectionCriteria.NumAllowedCVEs != nil {
 
-		is.Logger.Debugf("Checking number of CVEs")
+		is.Logger.Debugf("checking number of CVEs")
 
 		var total int
 		for _, report := range results {
@@ -95,7 +95,7 @@ func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidati
 		}
 
 		if total > is.RejectionCriteria.NumAllowedCVEs.AllowedCVEs {
-			is.Logger.Debugf("Too many CVEs")
+			is.Logger.Debugf("too many CVEs")
 			rulesViolated = append(rulesViolated, "pod container images contain too many total vulnerabilities ")
 		}
 	}
@@ -103,7 +103,7 @@ func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidati
 	// check if total number of critical CVEs is over allowed value, if enabled
 	if is.RejectionCriteria.NumCriticalCVEs != nil {
 
-		is.Logger.Debugf("Checking number of critical CVEs")
+		is.Logger.Debugf("checking number of critical CVEs")
 
 		var totalCriticalCVEs int
 		for _, report := range results {
@@ -119,7 +119,7 @@ func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidati
 		}
 
 		if totalCriticalCVEs > is.RejectionCriteria.NumCriticalCVEs.CriticalCVEs {
-			is.Logger.Debugf("Too many critical CVEs")
+			is.Logger.Debugf("too many critical CVEs")
 			rulesViolated = append(rulesViolated, "pod container images contain too many critical vulnerabilities")
 		}
 	}
@@ -127,12 +127,12 @@ func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidati
 	// check if any of the CVEs are part of the forbidden CVEs
 	if is.RejectionCriteria.ForbiddenCVEs != nil {
 
-		is.Logger.Debugf("Checking for forbidden CVEs")
+		is.Logger.Debugf("checking for forbidden CVEs")
 		for _, report := range results {
 			for _, result := range report.Results {
 				for _, vuln := range result.Vulnerabilities {
 					if slices.Contains(is.RejectionCriteria.ForbiddenCVEs.CVEs, vuln.VulnerabilityID) {
-						is.Logger.Infof("Forbidden CVE found %s", vuln.VulnerabilityID)
+						is.Logger.Infof("forbidden CVE found %s", vuln.VulnerabilityID)
 						msg := fmt.Sprintf("pod container image %s contains forbidden CVE %s", result.Target, vuln.VulnerabilityID)
 						rulesViolated = append(rulesViolated, msg)
 					}
@@ -150,7 +150,7 @@ func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidati
 		}
 	}
 
-	is.Logger.Debugf("Validation passed")
+	is.Logger.Debugf("validation passed")
 	return allowed
 
 }

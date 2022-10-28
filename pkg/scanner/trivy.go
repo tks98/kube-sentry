@@ -57,7 +57,7 @@ func (s *Scanner) ScanImages(pod *v1.Pod) ([]*types.Report, error) {
 
 	}
 
-	s.Logger.Infof("images were scanned")
+	s.Logger.Debugf("images were scanned")
 
 	return reports, nil
 
@@ -73,16 +73,16 @@ func (s *Scanner) sendScanRequest(image string) (*types.Report, error) {
 		args = append(args, "--insecure")
 	}
 
-	s.Logger.Infof("Sending scan request for image %s", image)
-	s.Logger.Infof("%s:%v", command, args)
+	s.Logger.Debugf("sending scan request for image %s", image)
+	s.Logger.Debugf("%s:%v", command, args)
 
 	out, err := exec.Command(command, args...).Output()
 	if err != nil {
-		s.Logger.Infof("error exec'ing trivy %s", err.Error())
+		s.Logger.Errorf("error running trivy %s", err.Error())
 		return nil, err
 	}
 
-	s.Logger.Infof("Image %s has been scanned", image)
+	s.Logger.Debugf("image %s has been scanned", image)
 
 	var report types.Report
 	err = json.Unmarshal(out, &report)
