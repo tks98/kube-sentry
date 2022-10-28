@@ -9,7 +9,7 @@ import (
 	kwhprometheus "github.com/slok/kubewebhook/v2/pkg/metrics/prometheus"
 	kwhwebhook "github.com/slok/kubewebhook/v2/pkg/webhook"
 	kwhvalidating "github.com/slok/kubewebhook/v2/pkg/webhook/validating"
-	logging "github.com/tks98/kube-sentry/pkg/logging"
+	"github.com/tks98/kube-sentry/pkg/logging"
 	"github.com/tks98/kube-sentry/pkg/metrics"
 	"github.com/tks98/kube-sentry/pkg/scanner"
 	"github.com/tks98/kube-sentry/pkg/webhook"
