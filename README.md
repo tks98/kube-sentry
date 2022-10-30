@@ -1,4 +1,4 @@
-<img src="docs/diagrams/logo/kube-sentry-logo2.png" alt="kube-sentry"/>
+<img src="docs/diagrams/logo/kube-sentry-logo3.png" alt="kube-sentry"/>
 
 >Defend against high-risk workloads and gain visibility into vulnerable containers running on Kubernetes
 
