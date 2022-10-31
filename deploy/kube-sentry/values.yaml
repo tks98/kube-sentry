@@ -4,14 +4,10 @@ replicaCount: 1
 # A caBundle needs to be created and specified ValidatingWebhookConfiguration
 # These certs also need to be mounted into kube-sentry so that we can utilize them
 webhook:
+  name: kube-sentry.test.svc
   caBundle:
     certmanager: # certmanager's ca-injector can be used to inject the caBundle into the ValidationWebhookConfiguration https://cert-manager.io/docs/concepts/ca-injector/
       enabled: true
-      secretName: kube-sentry-cert
-      annotations:
-        cert-manager.io/inject-ca-from: kube-sentry/kube-sentry-cert # namespace/secretName
-      dnsNames:
-        - kube-sentry.kube-sentry.svc # service.namespace
     value: "" # if you are not using certmanager, put the caBundle value here
 
 image:
@@ -24,7 +20,7 @@ image:
     insecure: "false"
     listenAddr: ":8080"
     metricsAddr: ":8081"
-    trivyAddr: "trivy.kube-sentry:4954"
+    trivyAddr: "trivy.test5:4954"
     trivyScheme: "http"
     metricsLabels: "report_name, image_namespace, image_registry, image_repository, image_tag,image_digest, severity, vulnerability_id, vulnerable_resource_name, installed_resource_version, fixed_resource_version, vulnerability_title, vulnerability_link"
     sentryMode: "true"

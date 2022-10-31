@@ -1,24 +1,30 @@
+{{- if .Values.webhook.caBundle.certmanager.enabled }}
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: self-signer
+  name: {{ include "kube-sentry.fullname" . }}
   namespace: {{.Release.Namespace}}
   annotations:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-3"
+  labels:
+    {{- include "kube-sentry.labels" . | nindent 4 }}
 spec:
   selfSigned: {}
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: kube-sentry-cert
+  name: {{ include "kube-sentry.fullname" . }}-cert
   namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": pre-install
+  labels:
+    {{- include "kube-sentry.labels" . | nindent 4 }}
 spec:
-  secretName: {{.Values.webhook.caBundle.certmanager.secretName}}
+  secretName: {{ include "kube-sentry.fullname" . }}-cert
   dnsNames:
-{{- toYaml .Values.webhook.caBundle.certmanager.dnsNames | nindent 4 }}
+    - {{ include "kube-sentry.fullname" . }}.{{.Release.Namespace}}.svc
   issuerRef:
-    name: self-signer
+    name: {{ include "kube-sentry.fullname" . }}
+{{- end }}

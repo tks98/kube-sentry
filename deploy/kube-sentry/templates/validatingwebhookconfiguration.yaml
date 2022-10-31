@@ -5,9 +5,11 @@ metadata:
   labels:
     {{- include "kube-sentry.labels" . | nindent 4 }}
   annotations:
-{{- toYaml .Values.webhook.caBundle.certmanager.annotations | nindent 4 }}
+    {{- if .Values.webhook.caBundle.certmanager.enabled }}
+    cert-manager.io/inject-ca-from: {{.Release.Namespace}}/{{ include "kube-sentry.fullname" . }}-cert # namespace/secretName
+    {{- end }}
 webhooks:
-  - name: kube-sentry.kube-sentry.svc
+  - name: {{ include "kube-sentry.fullname" . }}.{{.Release.Namespace}}.svc
     failurePolicy: Ignore # still forward api requests when unexpected errors are returned (expected failures still block pod creation)
     clientConfig:
       {{- if not .Values.webhook.caBundle.certmanager.enabled }}
@@ -22,6 +24,6 @@ webhooks:
         apiVersions: ["v1"]
         resources: ["pods"]
         operations: ["CREATE"]
-        scope: Namespaced
+        scope: "*"
     sideEffects: None
     admissionReviewVersions: ["v1"]
