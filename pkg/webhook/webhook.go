@@ -70,11 +70,11 @@ func (is *ImageScanner) Validate(_ context.Context, _ *kwhmodel.AdmissionReview,
 	is.Logger.Infof("%s images have been scanned", pod.Name)
 
 	// check if scan report for pod images meets validation criteria defined by user
-	return is.getValidatorResult(results), nil
+	return is.GetValidatorResult(results), nil
 }
 
-// getValidatorResult checks if the trivy scan results for all pod container images violated any of the rules defined by the user in RejectionCriteria
-func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidating.ValidatorResult {
+// GetValidatorResult checks if the trivy scan results for all pod container images violated any of the rules defined by the user in RejectionCriteria
+func (is *ImageScanner) GetValidatorResult(results []*types.Report) *kwhvalidating.ValidatorResult {
 
 	var rulesViolated []string
 
