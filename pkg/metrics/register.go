@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"strings"
 )
@@ -71,7 +70,6 @@ func GetMetricsLabels(l string) []VulnerabilityLabel {
 			Scope:  kind,
 		})
 	}
-	fmt.Printf("Labels: %v\n", vulnerabilityLabels)
 
 	return vulnerabilityLabels
 }

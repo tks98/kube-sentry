@@ -25,8 +25,6 @@ webhook:
       annotations:
         cert-manager.io/inject-ca-from: kube-sentry/kube-sentry-cert # namespace/secretName
       dnsNames:
-        - kube-sentry
-        - kube-sentry.kube-sentry
         - kube-sentry.kube-sentry.svc
     value: "" # if you are not using certmanager, put the PEM encoded caBundle here and set enabled to false
 ```

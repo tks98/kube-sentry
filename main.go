@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -9,6 +8,7 @@ import (
 	kwhprometheus "github.com/slok/kubewebhook/v2/pkg/metrics/prometheus"
 	kwhwebhook "github.com/slok/kubewebhook/v2/pkg/webhook"
 	kwhvalidating "github.com/slok/kubewebhook/v2/pkg/webhook/validating"
+	"github.com/tks98/kube-sentry/pkg/config"
 	"github.com/tks98/kube-sentry/pkg/logging"
 	"github.com/tks98/kube-sentry/pkg/metrics"
 	"github.com/tks98/kube-sentry/pkg/scanner"
@@ -17,66 +17,15 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strings"
 )
-
-// config stores the application's configuration state
-type config struct {
-	certFile        string
-	keyFile         string
-	logLevel        string
-	addr            string
-	metricsAddr     string
-	trivyAddr       string
-	trivyScheme     string
-	insecure        bool
-	metricsLabels   string
-	forbiddenCVEs   string
-	numAllowedCVEs  string
-	numCriticalCVEs string
-	sentryMode      bool
-}
-
-// initFlags() parses the application arguments and creates a config type
-func initFlags() *config {
-	cfg := &config{}
-
-	fl := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-	fl.StringVar(&cfg.certFile, "tls-cert-file", "", "TLS certificate file")
-	fl.StringVar(&cfg.keyFile, "tls-key-file", "", "TLS key file")
-	fl.StringVar(&cfg.logLevel, "log-level", "info", "Specifies the logging level (info or debug")
-	fl.StringVar(&cfg.addr, "listen-addr", ":8080", "The address to start the server")
-	fl.StringVar(&cfg.metricsAddr, "metrics-addr", ":8081", "The address to start metrics server")
-	fl.StringVar(&cfg.trivyAddr, "trivy-addr", "http://127.0.0.1:4954", "The address of the remote trivy server")
-	fl.StringVar(&cfg.trivyScheme, "trivy-scheme", "http", "The scheme to reach trivy server (http or https")
-	fl.BoolVar(&cfg.insecure, "insecure", false, "Allow insecure server connections to trivy server when using TLS")
-	fl.StringVar(&cfg.metricsLabels, "metrics-labels", "", "Specifies the metrics labels to export. If not given, will export all")
-	fl.BoolVar(&cfg.sentryMode, "sentry-mode", false, "Enables or disables rejecting pods based on trivy scan results")
-	fl.StringVar(&cfg.forbiddenCVEs, "forbidden-cves", "", "Specifies which CVEs in images causes pod validation to fail")
-	fl.StringVar(&cfg.numCriticalCVEs, "num-critical-cves", "", "Specifies max number of critical CVEs pod images can have")
-	fl.StringVar(&cfg.numAllowedCVEs, "num-allowed-cves", "", "Specifies max number of CVEs pod images can have")
-
-	_ = fl.Parse(os.Args[1:])
-
-	// clean up args
-	cfg.forbiddenCVEs = strings.Trim(cfg.forbiddenCVEs, "\"")
-	cfg.forbiddenCVEs = strings.Trim(cfg.forbiddenCVEs, "\n")
-	cfg.forbiddenCVEs = strings.Trim(cfg.forbiddenCVEs, "")
-	cfg.forbiddenCVEs = strings.Trim(cfg.forbiddenCVEs, " ")
-	cfg.metricsLabels = strings.Trim(cfg.metricsLabels, "\"")
-	cfg.metricsLabels = strings.Trim(cfg.metricsLabels, "\n")
-	cfg.metricsLabels = strings.Trim(cfg.metricsLabels, "")
-	cfg.metricsLabels = strings.Trim(cfg.metricsLabels, " ")
-	return cfg
-}
 
 func main() {
 
-	// parse config and clean args
-	cfg := initFlags()
+	// parse program arguments into config type
+	cfg := config.ParseFlags()
 
 	// init logging and parse flags
-	logger, err := logging.NewLogger(cfg.logLevel)
+	logger, err := logging.NewLogger(cfg.LogLevel)
 	if err != nil {
 		fmt.Printf(err.Error())
 		os.Exit(1)
@@ -90,7 +39,7 @@ func main() {
 	}
 
 	// create a new trivy scanner
-	trivyScanner, err := scanner.NewScanner(cfg.trivyAddr, cfg.insecure, logger, cfg.trivyScheme)
+	trivyScanner, err := scanner.NewScanner(cfg.TrivyAddr, cfg.Insecure, logger, cfg.TrivyScheme)
 	if err != nil {
 		logger.Errorf(err.Error())
 		os.Exit(1)
@@ -99,8 +48,8 @@ func main() {
 
 	// determine which criteria result in kube-sentry blocking pod creation
 	var rejectionCriteria *webhook.RejectionCriteria
-	if cfg.sentryMode {
-		rejectionCriteria, err = webhook.InitRejectionCriteria(cfg.forbiddenCVEs, cfg.numCriticalCVEs, cfg.numAllowedCVEs)
+	if cfg.SentryMode {
+		rejectionCriteria, err = webhook.InitRejectionCriteria(cfg.ForbiddenCVEs, cfg.NumCriticalCVEs, cfg.NumAllowedCVEs)
 		if err != nil {
 			logger.Errorf(err.Error())
 			os.Exit(1)
@@ -138,14 +87,14 @@ func main() {
 	}
 
 	// register the vulnerabilityInfo collector for exporting scan results
-	metrics.RegisterVulnerabilityCollector(reg, cfg.metricsLabels)
+	metrics.RegisterVulnerabilityCollector(reg, cfg.MetricsLabels)
 
 	errCh := make(chan error)
 
 	// serve the webhook
 	go func() {
-		logger.Infof("Listening on %s", cfg.addr)
-		err = http.ListenAndServeTLS(cfg.addr, cfg.certFile, cfg.keyFile, kwhhttp.MustHandlerFor(kwhhttp.HandlerConfig{
+		logger.Infof("Listening on %s", cfg.Addr)
+		err = http.ListenAndServeTLS(cfg.Addr, cfg.CertFile, cfg.KeyFile, kwhhttp.MustHandlerFor(kwhhttp.HandlerConfig{
 			Webhook: kwhwebhook.NewMeasuredWebhook(metricsRec, wh),
 			Logger:  logger,
 		}))
@@ -157,8 +106,8 @@ func main() {
 
 	// serve metrics.
 	go func() {
-		logger.Infof("Listening metrics on %s", cfg.metricsAddr)
-		err = http.ListenAndServe(cfg.metricsAddr, promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
+		logger.Infof("Listening metrics on %s", cfg.MetricsAddr)
+		err = http.ListenAndServe(cfg.MetricsAddr, promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
 		if err != nil {
 			errCh <- fmt.Errorf("error serving webhook metrics: %w", err)
 		}

@@ -50,13 +50,21 @@ func (is *ImageScanner) Validate(_ context.Context, _ *kwhmodel.AdmissionReview,
 		return nil, fmt.Errorf("not a pod")
 	}
 
-	is.Logger.Infof("pod %s is valid", pod.Name)
-
 	// scan container images and export results
 	results, err := is.Scanner.ScanImages(pod)
 	if err != nil {
+		var warnings []string
+		err = fmt.Errorf("kube-sentry error, allowing api request: %s", err.Error())
 		is.Logger.Errorf(err.Error())
-		return nil, err
+
+		// return valid response since we do not want to block api requests if there is a problem with kube-sentry
+		// attach warning so user knows there was a problem
+		warnings = append(warnings, err.Error())
+		is.Logger.Errorf("%v", warnings)
+		return &kwhvalidating.ValidatorResult{
+			Valid:    true,
+			Warnings: warnings,
+		}, err
 	}
 
 	is.Logger.Infof("%s images have been scanned", pod.Name)
@@ -80,7 +88,7 @@ func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidati
 		return allowed
 	}
 
-	is.Logger.Debugf("Checking if report passes validation")
+	is.Logger.Debugf("checking if report passes validation")
 
 	// check if total number of CVEs is over allowed value, if enabled
 	if is.RejectionCriteria.NumAllowedCVEs != nil {
@@ -96,7 +104,7 @@ func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidati
 
 		if total > is.RejectionCriteria.NumAllowedCVEs.AllowedCVEs {
 			is.Logger.Debugf("too many CVEs")
-			rulesViolated = append(rulesViolated, "pod container images contain too many total vulnerabilities ")
+			rulesViolated = append(rulesViolated, "pod container images contain too many total vulnerabilities")
 		}
 	}
 
@@ -133,7 +141,7 @@ func (is *ImageScanner) getValidatorResult(results []*types.Report) *kwhvalidati
 				for _, vuln := range result.Vulnerabilities {
 					if slices.Contains(is.RejectionCriteria.ForbiddenCVEs.CVEs, vuln.VulnerabilityID) {
 						is.Logger.Infof("forbidden CVE found %s", vuln.VulnerabilityID)
-						msg := fmt.Sprintf("pod container image %s contains forbidden CVE %s", result.Target, vuln.VulnerabilityID)
+						msg := fmt.Sprintf("pod container image %s contains forbidden CVE: %s", result.Target, vuln.VulnerabilityID)
 						rulesViolated = append(rulesViolated, msg)
 					}
 

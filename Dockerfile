@@ -10,9 +10,7 @@ RUN apt-get update -y && \
     curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
 # build Go binary
-# remove debugging information and compress binary
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o kube-sentry main.go
-#RUN upx --brute kube-sentry
+RUN CGO_ENABLED=0 go build -o kube-sentry main.go
 
 # copy binary into smaller image
 FROM alpine:latest
