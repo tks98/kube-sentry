@@ -38,7 +38,7 @@ func (s *Scanner) ScanImages(pod *v1.Pod) ([]*types.Report, error) {
 
 	var reports []*types.Report
 	for _, container := range pod.Spec.Containers {
-		report, err := s.sendScanRequest(container.Image)
+		report, err := s.SendScanRequest(container.Image)
 		if err != nil {
 			return nil, err
 		}
@@ -62,8 +62,8 @@ func (s *Scanner) ScanImages(pod *v1.Pod) ([]*types.Report, error) {
 
 }
 
-// sendScanRequest sends the image to trivy for scanning and returns the result
-func (s *Scanner) sendScanRequest(image string) (*types.Report, error) {
+// SendScanRequest sends the image to trivy for scanning and returns the result
+func (s *Scanner) SendScanRequest(image string) (*types.Report, error) {
 
 	command := "trivy"
 	args := []string{"client", "-f", "json", "--remote", s.RemoteURL, image}
