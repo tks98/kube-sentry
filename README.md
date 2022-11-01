@@ -1,4 +1,9 @@
-# kube-sentry
+<img src="docs/diagrams/logo/kube-sentry-logo-banner.png" alt="kube-sentry"/>
+
+>Defend against high-risk workloads and gain visibility into vulnerable containers running on Kubernetes
+
+
+# Introduction
 
 kube-sentry is a validating admission webhook for Kubernetes that scans incoming container images for vulnerabilities, exports scan results to prometheus, and can prevent pods from being created based on user specified rules.
 
@@ -8,13 +13,15 @@ kube-sentry is a validating admission webhook for Kubernetes that scans incoming
 
 kube-sentry can be installed with the included helm chart
 
+![kube-sentry-demo](docs/demo/demo.gif)
+
 ```bash
-helm install kube-sentry -n kube-sentry --create-namespace .
+helm install kube-sentry -n kube-sentry . --wait 
 ```
 
 ## Dependencies
 
-kube-sentry requires a remote trivy server for scanning container images. This can be installed using the trivy helm chart https://github.com/aquasecurity/trivy/tree/main/helm/trivy.
+kube-sentry requires a remote trivy server for scanning container images. By default, it is installed as a chart dependency. 
 
 ## Configuration
 

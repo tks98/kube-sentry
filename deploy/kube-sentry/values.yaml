@@ -1,23 +1,22 @@
 replicaCount: 1
 
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
 # The admission webhook needs to communicate with the k8s api server over https
 # A caBundle needs to be created and specified ValidatingWebhookConfiguration
 # These certs also need to be mounted into kube-sentry so that we can utilize them
 webhook:
+  name: kube-sentry.test.svc
   caBundle:
     certmanager: # certmanager's ca-injector can be used to inject the caBundle into the ValidationWebhookConfiguration https://cert-manager.io/docs/concepts/ca-injector/
       enabled: true
-      secretName: kube-sentry-cert
-      annotations:
-        cert-manager.io/inject-ca-from: kube-sentry/kube-sentry-cert # namespace/secretName
-      dnsNames:
-        - kube-sentry.kube-sentry.svc
     value: "" # if you are not using certmanager, put the caBundle value here
 
 image:
   repository:  docker.io/tks98/kube-sentry
   pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
   args:
     tlsCertFile: "/etc/webhook/certs/tls.crt"
@@ -25,7 +24,7 @@ image:
     insecure: "false"
     listenAddr: ":8080"
     metricsAddr: ":8081"
-    trivyAddr: "trivy.default:4954"
+    trivyAddr: "trivy.kube-sentry:4954"
     trivyScheme: "http"
     metricsLabels: "report_name, image_namespace, image_registry, image_repository, image_tag,image_digest, severity, vulnerability_id, vulnerable_resource_name, installed_resource_version, fixed_resource_version, vulnerability_title, vulnerability_link"
     sentryMode: "true"
@@ -40,26 +39,13 @@ image:
       containerPort: 8081
       protocol: TCP
 
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
-
 serviceAccount:
-  # Specifies whether a service account should be created
   create: true
-  # Annotations to add to the service account
-  annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
 
 podAnnotations:
   prometheus.io/path: /
   prometheus.io/port: '8081'
   prometheus.io/scrape: 'true'
-
-podSecurityContext: {}
-  # fsGroup: 2000
 
 securityContext:
   capabilities:
@@ -73,18 +59,11 @@ service:
   type: ClusterIP
   port: 443
 
-
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-
 autoscaling:
   enabled: false
+
+# enable and configure trivy server instance to be deployed with kube-sentry
+# https://github.com/aquasecurity/trivy/blob/main/helm/trivy/values.yaml
+trivy:
+  enabled: true
+  fullnameOverride: "trivy"

@@ -6,9 +6,9 @@ import (
 	"github.com/aquasecurity/trivy/pkg/types"
 	parser "github.com/novln/docker-parser"
 	kwhlog "github.com/slok/kubewebhook/v2/pkg/log"
+	"github.com/tks98/kube-sentry/pkg/exec"
 	"github.com/tks98/kube-sentry/pkg/metrics"
 	v1 "k8s.io/api/core/v1"
-	"os/exec"
 )
 
 // Scanner represents a trivy scanner
@@ -54,7 +54,6 @@ func (s *Scanner) ScanImages(pod *v1.Pod) ([]*types.Report, error) {
 		}
 
 		reports = append(reports, report)
-
 	}
 
 	s.Logger.Debugf("images were scanned")
@@ -76,16 +75,15 @@ func (s *Scanner) sendScanRequest(image string) (*types.Report, error) {
 	s.Logger.Debugf("sending scan request for image %s", image)
 	s.Logger.Debugf("%s:%v", command, args)
 
-	out, err := exec.Command(command, args...).Output()
+	out, err := exec.RunCommand(command, args...)
 	if err != nil {
-		s.Logger.Errorf("error running trivy %s", err.Error())
 		return nil, err
 	}
 
 	s.Logger.Debugf("image %s has been scanned", image)
 
 	var report types.Report
-	err = json.Unmarshal(out, &report)
+	err = json.Unmarshal([]byte(out), &report)
 	if err != nil {
 		return nil, err
 	}
