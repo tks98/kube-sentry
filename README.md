@@ -11,7 +11,7 @@ kube-sentry is a validating admission webhook for Kubernetes that scans incoming
 
 ## Installation
 
-kube-sentry can be installed with the included helm chart
+kube-sentry can be installed with the included helm chart. 
 
 ![kube-sentry-demo](docs/demo/demo.gif)
 
@@ -22,6 +22,10 @@ helm install kube-sentry -n kube-sentry . --wait
 ## Dependencies
 
 kube-sentry requires a remote trivy server for scanning container images. By default, it is installed as a chart dependency. 
+
+## Documentation
+
+The documentation directory "docs" contains information on how to configure kube-sentry certificates, validation-rules, and metrics. 
 
 ## Configuration
 
