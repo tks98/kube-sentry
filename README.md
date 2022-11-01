@@ -23,6 +23,10 @@ helm install kube-sentry -n kube-sentry . --wait
 
 kube-sentry requires a remote trivy server for scanning container images. By default, it is installed as a chart dependency. 
 
+## Documentation
+
+The documentation directory "docs" contains information on how to configure kube-sentry certificates, validation-rules, and metrics. 
+
 ## Configuration
 
 | Argument          | Description                                                           |
