@@ -1,5 +1,9 @@
 replicaCount: 1
 
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
 # The admission webhook needs to communicate with the k8s api server over https
 # A caBundle needs to be created and specified ValidatingWebhookConfiguration
 # These certs also need to be mounted into kube-sentry so that we can utilize them
@@ -20,7 +24,7 @@ image:
     insecure: "false"
     listenAddr: ":8080"
     metricsAddr: ":8081"
-    trivyAddr: "trivy.test5:4954"
+    trivyAddr: "trivy.kube-sentry:4954"
     trivyScheme: "http"
     metricsLabels: "report_name, image_namespace, image_registry, image_repository, image_tag,image_digest, severity, vulnerability_id, vulnerable_resource_name, installed_resource_version, fixed_resource_version, vulnerability_title, vulnerability_link"
     sentryMode: "true"
@@ -34,10 +38,6 @@ image:
     - name: metrics
       containerPort: 8081
       protocol: TCP
-
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
 
 serviceAccount:
   create: true

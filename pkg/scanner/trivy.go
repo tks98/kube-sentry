@@ -54,7 +54,6 @@ func (s *Scanner) ScanImages(pod *v1.Pod) ([]*types.Report, error) {
 		}
 
 		reports = append(reports, report)
-
 	}
 
 	s.Logger.Debugf("images were scanned")

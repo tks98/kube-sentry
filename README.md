@@ -2,6 +2,7 @@
 
 >Defend against high-risk workloads and gain visibility into vulnerable containers running on Kubernetes
 
+
 # Introduction
 
 kube-sentry is a validating admission webhook for Kubernetes that scans incoming container images for vulnerabilities, exports scan results to prometheus, and can prevent pods from being created based on user specified rules.
@@ -11,6 +12,8 @@ kube-sentry is a validating admission webhook for Kubernetes that scans incoming
 ## Installation
 
 kube-sentry can be installed with the included helm chart
+
+![kube-sentry-demo](docs/demo/demo.gif)
 
 ```bash
 helm install kube-sentry -n kube-sentry . --wait 

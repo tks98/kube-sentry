@@ -64,7 +64,7 @@ func main() {
 	}
 
 	// create webhook
-	config := kwhvalidating.WebhookConfig{
+	webhookConfig := kwhvalidating.WebhookConfig{
 		ID:        "imageScanner",
 		Obj:       &v1.Pod{},
 		Validator: scannerWebhook,
@@ -72,7 +72,7 @@ func main() {
 	}
 
 	// register the webhook
-	wh, err := kwhvalidating.NewWebhook(config)
+	wh, err := kwhvalidating.NewWebhook(webhookConfig)
 	if err != nil {
 		logger.Errorf("error creating webhook: %s", err)
 		os.Exit(1)
@@ -104,7 +104,7 @@ func main() {
 		errCh <- nil
 	}()
 
-	// serve metrics.
+	// serve metrics
 	go func() {
 		logger.Infof("Listening metrics on %s", cfg.MetricsAddr)
 		err = http.ListenAndServe(cfg.MetricsAddr, promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
