@@ -11,7 +11,7 @@ kube-sentry is a validating admission webhook for Kubernetes that scans incoming
 
 ## Installation
 
-kube-sentry can be installed with the included helm chart
+kube-sentry can be installed with the included helm chart. 
 
 ![kube-sentry-demo](docs/demo/demo.gif)
 
